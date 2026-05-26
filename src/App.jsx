@@ -12,6 +12,7 @@ import MultiBar from './components/MultiBar.jsx';
 import EnvForm from './components/EnvForm.jsx';
 import AddForm from './components/AddForm.jsx';
 import ExportPanel from './components/ExportPanel.jsx';
+import EditForm from './components/EditForm.jsx';
 import CombatantCard from './components/CombatantCard.jsx';
 import Toast from './components/Toast.jsx';
 
@@ -349,7 +350,7 @@ function App() {
 
   // ---- Forms ----
   function toggleAddForm() {
-    update(s => { s.showAddForm = !s.showAddForm; if (s.showAddForm) s.formErrors = {}; });
+    update(s => { s.showAddForm = !s.showAddForm; if (s.showAddForm) { s.formErrors = {}; s.editId = null; } });
   }
 
   function setAddFormType(t) {
@@ -421,6 +422,49 @@ function App() {
     });
     showToast(`Added: ${data.name}`);
     return true;
+  }
+
+  // ---- Edit ----
+  function startEdit(id) {
+    update(s => { s.editId = id; s.showAddForm = false; s.showEnvForm = false; });
+  }
+
+  function cancelEdit() {
+    update(s => { s.editId = null; });
+  }
+
+  function confirmEdit(id, data) {
+    update(s => {
+      const c = s.combatants.find(c => c.id === id);
+      if (!c) return;
+      c.name = data.name;
+      c.subname = data.subname;
+      c.init = data.init;
+      c.ac = data.ac;
+      c.maxHp = data.maxHp;
+      c.hp = Math.min(c.hp, data.maxHp);
+      c.tempHp = data.tempHp;
+      c.notes = data.notes;
+      if (data.slotsSpec !== null) {
+        if (Object.keys(data.slotsSpec).length > 0) {
+          const newSlots = mkSlots(data.slotsSpec);
+          if (c.spellSlots) {
+            Object.keys(newSlots.used).forEach(k => {
+              newSlots.used[k] = Math.min(c.spellSlots.used[k] || 0, newSlots.max[k]);
+            });
+          }
+          c.spellSlots = newSlots;
+        } else {
+          c.spellSlots = null;
+        }
+      }
+      if (typeof data.legMax === 'number') {
+        c.legendaryMax = data.legMax;
+        c.legendaryUsed = Math.min(c.legendaryUsed, data.legMax);
+      }
+      s.editId = null;
+    });
+    showToast(`Updated: ${data.name}`);
   }
 
   // ---- Quick Cond ----
@@ -499,6 +543,7 @@ function App() {
     setNotes,
     removeCombatant,
     toggleAddForm, setAddFormType, addLair, confirmEnv, confirmAdd,
+    startEdit, cancelEdit, confirmEdit,
     toggleQuickCond,
     toggleExport, toggleEnvForm, importState,
     toggleMulti, toggleSelect, selectAllEnemies, clearSelection, setAoeAmt, applyAoe,
@@ -513,6 +558,7 @@ function App() {
       {state.multiMode && <MultiBar />}
       {state.showEnvForm && <EnvForm />}
       {state.showAddForm && <AddForm />}
+      {state.editId && <EditForm />}
       {state.showExport && <ExportPanel />}
       <div id="list">
         {state.combatants.length === 0 ? (

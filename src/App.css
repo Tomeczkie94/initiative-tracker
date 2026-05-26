@@ -61,6 +61,7 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',system-ui,sans-se
 .cbt.is-active{box-shadow:var(--glow);border-color:var(--gold);background:var(--panel-hi)}
 .cbt.is-downed{opacity:.55;filter:grayscale(.3)}
 .cbt.is-done:not(.is-active){opacity:.7}
+.cbt.is-editing{box-shadow:0 0 0 2px #7a5e28,0 0 12px rgba(122,94,40,.2);border-color:var(--border-hi)}
 
 /* CARD HEAD */
 .cbt-head{display:flex;align-items:center;gap:16px;padding:7px 10px 5px;cursor:pointer;user-select:none}
