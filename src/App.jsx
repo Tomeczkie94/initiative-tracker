@@ -13,6 +13,7 @@ import EnvForm from './components/EnvForm.jsx';
 import AddForm from './components/AddForm.jsx';
 import ExportPanel from './components/ExportPanel.jsx';
 import EditForm from './components/EditForm.jsx';
+import Sidebar from './components/Sidebar.jsx';
 import CombatantCard from './components/CombatantCard.jsx';
 import Toast from './components/Toast.jsx';
 
@@ -547,29 +548,48 @@ function App() {
     toggleQuickCond,
     toggleExport, toggleEnvForm, importState,
     toggleMulti, toggleSelect, selectAllEnemies, clearSelection, setAoeAmt, applyAoe,
+    toggleSidebar: () => update(s => { s.sidebarOpen = !s.sidebarOpen; }),
+    setView: (v) => update(s => { s.view = v; }),
     showToast,
   };
 
   return (
     <AppContext.Provider value={ctx}>
-      <Header />
-      {state.concSaves.length > 0 && <ConcBanner />}
-      <Toolbar />
-      {state.multiMode && <MultiBar />}
-      {state.showEnvForm && <EnvForm />}
-      {state.showAddForm && <AddForm />}
-      {state.editId && <EditForm />}
-      {state.showExport && <ExportPanel />}
-      <div id="list">
-        {state.combatants.length === 0 ? (
-          <div className="empty-state">
-            <h3>No Combatants</h3>
-            <p>Click <em>Add Combatant</em> in the toolbar, or import a saved state via Export / Import.</p>
-          </div>
+      <div id="sidebar" className={state.sidebarOpen ? '' : 'collapsed'}>
+        <Sidebar />
+      </div>
+      <div className="main-content">
+        <Header />
+        {state.view === 'combat' ? (
+          <>
+            {state.concSaves.length > 0 && <ConcBanner />}
+            <Toolbar />
+            {state.multiMode && <MultiBar />}
+            {state.showEnvForm && <EnvForm />}
+            {state.showAddForm && <AddForm />}
+            {state.editId && <EditForm />}
+            {state.showExport && <ExportPanel />}
+            <div id="list">
+              {state.combatants.length === 0 ? (
+                <div className="empty-state">
+                  <h3>No Combatants</h3>
+                  <p>Click <em>Add Combatant</em> in the toolbar, or import a saved state via Export / Import.</p>
+                </div>
+              ) : (
+                state.combatants.map((c, i) => (
+                  <CombatantCard key={c.id} combatant={c} index={i} />
+                ))
+              )}
+            </div>
+          </>
         ) : (
-          state.combatants.map((c, i) => (
-            <CombatantCard key={c.id} combatant={c} index={i} />
-          ))
+          <div className="view-placeholder">
+            <div className="view-placeholder-inner">
+              <i className={`ti ${state.view === 'party' ? 'ti-users' : 'ti-skull'}`}></i>
+              <h2>{state.view === 'party' ? 'Party' : 'Monsters'}</h2>
+              <p>This screen is coming soon.</p>
+            </div>
+          </div>
         )}
       </div>
       {state.toast && <Toast message={state.toast} />}

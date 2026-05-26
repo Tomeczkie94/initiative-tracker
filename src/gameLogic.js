@@ -57,6 +57,8 @@ export function initialState() {
     quickCondId: null,
     multiMode: false, selected: {}, aoeAmt: 10,
     editId: null,
+    sidebarOpen: true,
+    view: 'combat',
   };
 }
 
