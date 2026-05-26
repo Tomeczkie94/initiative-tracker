@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combat Initiative Tracker — Wędrowcy Spoza Mgieł</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0905;--panel:#18140c;--panel-hi:#211b11;--panel-el:#2a2318;
+  --border:#3e2e14;--border-hi:#7a5e28;
+  --gold:#c9a53c;--gold-hi:#e8cc6a;
+  --text:#e4d09a;--text-md:#a88c60;--text-lo:#6a5640;
+  --pc:#2a5fa0;--enemy:#9a2828;--env:#5a5a5a;--lair:#7a4a18;
+  --hp-hi:#2a8a2a;--hp-md:#b87228;--hp-lo:#c02828;
+  --spell:#7028a8;
+  --glow:0 0 0 2px #c9a53c,0 0 20px rgba(201,165,60,.25);
+}
+html,body{height:100%;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Lato',system-ui,sans-serif;font-size:13px;line-height:1.4;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(180deg,#221c10,#150f07);border:1px solid var(--border-hi);color:var(--text);padding:4px 10px;border-radius:2px;cursor:pointer;font-size:12px;font-family:'Lato',sans-serif;transition:all .15s;white-space:nowrap;line-height:1.3}
+.btn:hover{background:linear-gradient(180deg,#2e2618,#1e180e);border-color:var(--gold);color:var(--gold-hi)}
+.btn:active{transform:translateY(1px)}
+.btn-sm{padding:2px 7px;font-size:11px}
+.btn-icon{padding:3px 6px;min-width:24px;justify-content:center}
+.btn-blue{background:linear-gradient(180deg,#162438,#0c1624);border-color:#2a5090;color:#80aae0}
+.btn-blue:hover{background:linear-gradient(180deg,#1e3050,#121e38);border-color:#4080c0;color:#aacaf0}
+.btn-red{background:linear-gradient(180deg,#381616,#240a0a);border-color:#804040;color:#e08080}
+.btn-red:hover{background:linear-gradient(180deg,#501e1e,#380e0e);border-color:#c04040;color:#f0a0a0}
+.btn-green{background:linear-gradient(180deg,#143814,#0a200a);border-color:#307030;color:#70c870}
+.btn-green:hover{background:linear-gradient(180deg,#1c4c1c,#102810);border-color:#50a050;color:#90e090}
+.btn-gold{background:linear-gradient(180deg,#302010,#1e1408);border-color:var(--gold);color:var(--gold-hi)}
+.btn-gold:hover{background:linear-gradient(180deg,#40280e,#281808);border-color:var(--gold-hi)}
+
+/* HEADER */
+#header{position:sticky;top:0;z-index:100;background:var(--panel);border-bottom:2px solid var(--border-hi);padding:8px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 3px 16px rgba(0,0,0,.7);flex-shrink:0}
+.hdr-runda{font-family:'Cinzel',serif;font-size:11px;color:var(--text-md);letter-spacing:.05em;white-space:nowrap;min-width:80px}
+.hdr-runda span{color:var(--gold-hi);font-size:16px;font-weight:700}
+.hdr-name{font-family:'Cinzel',serif;font-size:13px;color:var(--gold-hi);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-nav{display:flex;gap:6px;align-items:center;margin-left:auto;flex-shrink:0}
+
+/* TOOLBAR */
+#toolbar{padding:6px 14px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex-shrink:0}
+
+/* CONC BANNER */
+#conc-banner{background:linear-gradient(180deg,#2e1c08,#1a1008);border-bottom:2px solid #c87020;padding:6px 14px;flex-shrink:0}
+.conc-title{font-family:'Cinzel',serif;font-size:10px;color:#c87020;letter-spacing:.08em;margin-bottom:4px}
+.conc-item{display:flex;align-items:center;gap:8px;padding:3px 0;border-top:1px solid rgba(200,112,32,.2)}
+.conc-who{color:#e8a040;font-weight:700;font-size:12px;white-space:nowrap}
+.conc-dc{font-family:'Cinzel',serif;font-size:14px;color:#f0c060;font-weight:700}
+.conc-info{color:var(--text-md);font-size:11px;flex:1}
+
+/* LIST */
+#list{flex:1;overflow-y:scroll;padding:8px 0 32px;scrollbar-width:thin;scrollbar-color:var(--border-hi) var(--bg)}
+
+/* COMBATANT */
+.cbt{background:var(--panel);border:1px solid var(--border);border-left:4px solid transparent;margin:5px 12px;border-radius:2px;transition:box-shadow .2s,border-color .2s,background .2s}
+.cbt.t-pc{border-left-color:var(--pc)}
+.cbt.t-enemy{border-left-color:var(--enemy)}
+.cbt.t-env{border-left-color:var(--env)}
+.cbt.t-lair{border-left-color:var(--lair)}
+.cbt.is-active{box-shadow:var(--glow);border-color:var(--gold);background:var(--panel-hi)}
+.cbt.is-downed{opacity:.55;filter:grayscale(.3)}
+.cbt.is-done:not(.is-active){opacity:.7}
+
+/* CARD HEAD */
+.cbt-head{display:flex;align-items:center;gap:16px;padding:7px 10px 5px;cursor:pointer;user-select:none}
+.cbt-head:hover .cbt-name{color:var(--gold-hi)}
+.init-wrap{width:46px;flex-shrink:0}
+.init-inp{width:46px;background:var(--bg);border:1px solid var(--border-hi);color:var(--text);font-family:'Cinzel',serif;font-size:18px;font-weight:700;text-align:center;padding:0;border-radius:2px;height:36px;line-height:36px;vertical-align:middle}
+.init-inp:focus{outline:1px solid var(--gold)}
+.nameblock{flex:1;min-width:0}
+.cbt-name{font-family:'Cinzel',serif;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbt-sub{font-size:11px;color:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hp-block{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.hp-row{display:flex;align-items:center;gap:10px}
+.hp-nums{display:flex;align-items:baseline;gap:3px}
+.hp-cur{font-family:'Cinzel',serif;font-size:18px;font-weight:700}
+.hp-sep,.hp-max{color:var(--text-md);font-size:13px}
+.hp-tmp{color:#60a8e0;font-size:12px;margin-left:4px}
+.hp-ctrl{display:flex;align-items:center;gap:5px}
+.hp-amt{width:52px;background:var(--bg);border:1px solid var(--border-hi);color:var(--text);font-size:14px;text-align:center;padding:0;border-radius:2px;height:32px;line-height:32px}
+.hp-amt:focus{outline:1px solid var(--gold)}
+.hp-bar-wrap{width:100%;height:5px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+.hp-bar{height:100%;transition:width .3s,background .3s;border-radius:1px}
+.chevron{font-size:10px;color:var(--text-lo);transition:transform .2s;flex-shrink:0}
+.chevron.open{transform:rotate(90deg)}
+
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:4px 10px 6px 52px;border-top:1px solid var(--border);background:rgba(0,0,0,.15);min-height:30px}
+.pill{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border-hi);color:var(--text-md);font-size:11px;padding:2px 7px;border-radius:10px;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Cinzel',serif}
+.pill:hover{border-color:var(--gold);color:var(--text)}
+.pill.c-half{border-color:#8090c0;color:#a0b0e0}
+.pill.c-three{border-color:#8060d0;color:#a080f0}
+.pill.c-total{border-color:#c02020;color:#e04040}
+.pill-sp{border-color:#5028a0;color:#a080e0;font-family:'Lato',sans-serif}
+.pill-sp:hover{border-color:#8050e0}
+.pill-leg{border-color:#5020a0;color:#c090f0;font-family:'Lato',sans-serif}
+.act-dots{display:flex;gap:3px}
+.act-dot{height:26px;padding:0 8px;border:1px solid var(--border-hi);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'Cinzel',serif;color:var(--text-md);cursor:pointer;background:var(--bg);transition:all .15s;white-space:nowrap}
+.act-dot:hover{border-color:var(--gold);color:var(--text)}
+.act-dot.used{background:#601010;border-color:#a02020;color:#e06060}
+.cb{display:inline-flex;align-items:center;gap:2px;font-size:10px;padding:1px 6px;border-radius:10px;cursor:pointer;border:1px solid;transition:opacity .15s}
+.cb:hover{opacity:.7}
+.cb-def{background:#2a2318;border-color:#5a4828;color:#c0a060}
+.cb-red{background:#2a1010;border-color:#8a2020;color:#e08080}
+.cb-blue{background:#101828;border-color:#204870;color:#80a8d8}
+.cb-green{background:#102010;border-color:#206020;color:#70d070}
+.cb-purple{background:#1a1028;border-color:#502090;color:#c090f0}
+.cb-gray{background:#1c1c1c;border-color:#484848;color:#9a9a9a}
+.cb-conc{background:#0e1e30;border-color:#2060a0;color:#80c0f0}
+/* UNIQUE CONDITION COLORS */
+.cb-c1{background:#220808;border-color:#9a2020;color:#f07070}   /* Blinded - crimson */
+.cb-c2{background:#200818;border-color:#902060;color:#f070b8}   /* Charmed - rose */
+.cb-c3{background:#0c0c20;border-color:#404890;color:#8090d8}   /* Deafened - slate blue */
+.cb-c4{background:#200a00;border-color:#9a4000;color:#f09040}   /* Frightened - burnt orange */
+.cb-c5{background:#160c06;border-color:#6a4820;color:#c09060}   /* Grappled - leather brown */
+.cb-c6{background:#1c0404;border-color:#801010;color:#d04040}   /* Incapacitated - dark red */
+.cb-c7{background:#041818;border-color:#107878;color:#40d0d0}   /* Invisible - teal */
+.cb-c8{background:#180000;border-color:#880000;color:#e03030}   /* Paralyzed - blood red */
+.cb-c9{background:#101010;border-color:#505050;color:#a0a0a0}   /* Petrified - stone gray */
+.cb-c10{background:#041408;border-color:#187830;color:#40d060}  /* Poisoned - toxic green */
+.cb-c11{background:#140e06;border-color:#604830;color:#b08858}  /* Prone - earth tan */
+.cb-c12{background:#100e00;border-color:#706818;color:#d0c030}  /* Restrained - rope gold */
+.cb-c13{background:#181200;border-color:#806000;color:#e0b020}  /* Stunned - amber */
+.cb-c14{background:#0c0000;border-color:#580808;color:#a02828}  /* Unconscious - near-black */
+.cb-c15{background:#0e0818;border-color:#583080;color:#a860e0}  /* Exhausted - deep purple */
+.cb-c16{background:#041020;border-color:#1870a0;color:#40b8f0}  /* Bless - celestial */
+.cb-c17{background:#0e0418;border-color:#681888;color:#c040f0}  /* Bane - void purple */
+.cb-c18{background:#0c1200;border-color:#508808;color:#98e018}  /* Haste - electric lime */
+.cb-c19{background:#041418;border-color:#187890;color:#28c0e0}  /* Slow - ice blue */
+
+/* EXPANDED */
+.cbt-exp{border-top:1px solid var(--border)}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.tab{padding:6px 12px;font-size:11px;color:var(--text-md);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--gold-hi);border-bottom-color:var(--gold)}
+.tab-body{padding:10px 12px;background:var(--bg)}
+
+/* HP TAB */
+.frow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.frow label{font-size:11px;color:var(--text-md);width:100px;flex-shrink:0}
+.finp{width:90px;background:var(--panel);border:1px solid var(--border-hi);color:var(--text);font-family:'Cinzel',serif;font-size:14px;padding:0;border-radius:2px;text-align:center;height:34px;line-height:34px}
+.finp:focus{outline:1px solid var(--gold)}
+.fsel{background:var(--panel);border:1px solid var(--border-hi);color:var(--text);padding:6px 8px;border-radius:2px;font-size:13px;height:34px}
+.fsel:focus{outline:1px solid var(--gold)}
+.fsel option{background:var(--panel)}
+
+/* COND TAB */
+.cond-grid{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 8px}
+.cond-btn{padding:3px 10px;border:1px solid var(--border-hi);border-radius:10px;font-size:11px;color:var(--text-md);cursor:pointer;background:var(--bg);transition:all .15s}
+.cond-btn:hover{border-color:var(--gold);color:var(--text)}
+.cond-btn.on{background:#302818;border-color:var(--gold);color:var(--gold-hi)}
+.conc-row{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--border)}
+.conc-ind{font-size:11px;color:var(--text-md)}
+.conc-ind.on{color:#80c0f0}
+
+/* SPELL TAB */
+.sp-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sp-lbl{font-size:11px;color:var(--text-md);width:50px;flex-shrink:0;font-family:'Cinzel',serif}
+.sp-pips{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.sp-pip{width:16px;height:16px;border:1px solid;border-radius:2px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.sp-pip.avail{background:#3a1870;border-color:#7030a8}
+.sp-pip.used{background:var(--bg);border-color:#3a2860}
+.sp-pip:hover{border-color:#a060e0}
+.sp-cnt{font-size:11px;color:var(--text-md);width:32px;text-align:right;flex-shrink:0}
+.sp-btns{display:flex;gap:6px;margin-top:8px}
+
+/* STATBLOCK */
+.sb{font-size:12px;line-height:1.6}
+.sb-name{font-family:'Cinzel',serif;font-size:14px;color:var(--gold-hi);margin-bottom:2px}
+.sb-meta{font-size:11px;color:var(--text-md);font-style:italic;margin-bottom:6px}
+.sb-hr{border:none;border-top:1px solid var(--border-hi);margin:6px 0}
+.sb-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+.sb-l{color:var(--text-md);font-size:11px;font-weight:700}
+.sb-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center;margin:6px 0}
+.sb-stats .sn{font-size:10px;color:var(--text-md)}
+.sb-stats .sv{font-size:14px;font-weight:700;font-family:'Cinzel',serif}
+.sb-stats .sm{font-size:10px;color:var(--text-md)}
+.sb-sec{margin-bottom:8px}
+.sb-stitle{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.08em;color:var(--gold);border-bottom:1px solid var(--border-hi);padding-bottom:2px;margin-bottom:4px}
+.sb-sec p{margin-bottom:3px}
+.spell-link{color:#9070e0;text-decoration:none}
+.spell-link:hover{color:#c0a0f0;text-decoration:underline}
+
+/* LEGENDARY TAB */
+.leg-pips{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+.leg-pip{width:22px;height:22px;border:1px solid;border-radius:50%;cursor:pointer;transition:all .15s}
+.leg-pip.avail{background:#3a1870;border-color:#8030c0}
+.leg-pip.used{background:var(--bg);border-color:#3a2860}
+.leg-pip:hover{border-color:#c060f0}
+
+/* DEATH SAVES */
+.dc-circle{width:22px;height:22px;border:2px solid;border-radius:50%;cursor:pointer;transition:all .15s;display:inline-block}
+.dc-circle.suc{border-color:#2a7a2a}
+.dc-circle.suc.on{background:#2a8a2a;border-color:#4aca4a}
+.dc-circle.fail{border-color:#7a2020}
+.dc-circle.fail.on{background:#8a2020;border-color:#ca4040}
+
+/* NOTES */
+.notes-ta{width:100%;min-height:80px;background:var(--panel);border:1px solid var(--border-hi);color:var(--text);padding:6px 8px;border-radius:2px;font-size:12px;font-family:'Lato',sans-serif;resize:vertical}
+.notes-ta:focus{outline:1px solid var(--gold)}
+
+/* PANELS */
+.panel-block{background:var(--panel);border-bottom:1px solid var(--border-hi);padding:10px 14px;flex-shrink:0}
+.panel-title{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.export-ta{width:100%;height:110px;background:var(--bg);border:1px solid var(--border-hi);color:var(--text-md);padding:6px 8px;font-size:11px;font-family:monospace;border-radius:2px;resize:vertical;margin-bottom:8px}
+.export-ta:focus{outline:1px solid var(--gold)}
+.ex-btns{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ADD FORM */
+.type-tgl{display:flex;gap:0;margin-bottom:10px}
+.type-btn{padding:4px 18px;border:1px solid var(--border-hi);font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-md);transition:all .15s}
+.type-btn:first-child{border-radius:2px 0 0 2px}
+.type-btn:last-child{border-radius:0 2px 2px 0;border-left:none}
+.type-btn.s-pc{background:#102040;border-color:var(--pc);color:#80b0f0}
+.type-btn.s-en{background:#200e0e;border-color:var(--enemy);color:#f08080}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg.span2{grid-column:1/-1}
+.flbl{font-size:11px;color:var(--text-md)}
+.finp2{background:var(--panel);border:1px solid var(--border-hi);color:var(--text);padding:6px 10px;border-radius:2px;font-size:13px;font-family:'Lato',sans-serif;width:100%;min-height:34px}
+.finp2:focus{outline:1px solid var(--gold)}
+.finp2.err{border-color:#c02020}
+.ferr{font-size:10px;color:#e06060}
+.fwarn{font-size:10px;color:#d0a040}
+.fsec{font-size:11px;color:var(--gold);margin:8px 0 4px;padding-top:6px;border-top:1px solid var(--border)}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+
+/* ENV FORM */
+.env-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel-hi);border:1px solid var(--gold);color:var(--gold-hi);padding:8px 18px;border-radius:3px;font-family:'Cinzel',serif;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.7);z-index:1000;pointer-events:none;animation:toastIn .2s ease}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* TAG line */
+.tag-line{font-size:10px;color:var(--text-lo);font-style:italic;font-family:'Cinzel',serif;letter-spacing:.04em;white-space:nowrap}
+
+/* QUICK CONDITION PANEL */
+.quick-cond-panel{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px 6px 52px;background:var(--panel-el);border-top:1px solid var(--border)}
+.qc-btn{padding:3px 9px;border:1px solid var(--border-hi);border-radius:10px;font-size:10px;color:var(--text-md);cursor:pointer;background:var(--bg);transition:all .15s}
+.qc-btn:hover{border-color:var(--gold);color:var(--text)}
+.qc-btn.on{background:#302818;border-color:var(--gold);color:var(--gold-hi)}
+/* MULTI-TARGET BAR */
+.multi-bar{background:var(--panel);border-bottom:2px solid #9a2828;padding:8px 14px;display:flex;gap:10px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.multi-lbl{font-family:'Cinzel',serif;font-size:11px;color:#e08080;letter-spacing:.06em}
+.cbt-checkbox{width:20px;height:20px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
+/* KBD HINTS */
+.kbd{display:inline-block;background:var(--bg);border:1px solid var(--border-hi);border-radius:2px;padding:0 4px;font-size:9px;font-family:monospace;color:var(--text-md);line-height:14px}
+.kbd-hint{font-size:10px;color:var(--text-lo);white-space:nowrap}
+/* NEXT LABEL */
+.next-lbl{font-size:10px;color:var(--text-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.next-lbl b{color:var(--gold);font-family:'Cinzel',serif}
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text-lo);padding:60px 20px;text-align:center}
+.empty-state h3{font-family:'Cinzel',serif;font-size:16px;color:var(--text-md)}
+/* DEPLETED SPELL */
+.pill-sp.depleted{border-color:#6a2020!important;color:#a04040!important}
+/* ALL DONE BADGE */
+.done-badge{font-size:9px;font-family:'Cinzel',serif;letter-spacing:.08em;color:#7a1010;border:1px solid #5a1010;padding:1px 5px;border-radius:2px;flex-shrink:0}
+/* ATTACK BLOCK IN STATBLOCK */
+.sb-atk{background:rgba(201,165,60,.07);border:1px solid rgba(201,165,60,.15);border-radius:2px;padding:5px 8px;margin-bottom:5px}
+.sb-atk strong{color:var(--gold-hi)}
+.sb-atk .sa-stat{font-family:'Cinzel',serif;font-size:12px;color:#e08040}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ======================================================
+// CONSTANTS
+// ======================================================
+const CONDITIONS = [
+  'Blinded','Charmed','Deafened','Frightened','Grappled',
+  'Incapacitated','Invisible','Paralyzed','Petrified','Poisoned',
+  'Prone','Restrained','Stunned','Unconscious','Exhausted',
+  'Bless','Bane','Haste','Slow'
+];
+const COND_CSS = {
+  'Blinded':'cb-c1','Charmed':'cb-c2','Deafened':'cb-c3',
+  'Frightened':'cb-c4','Grappled':'cb-c5','Incapacitated':'cb-c6',
+  'Invisible':'cb-c7','Paralyzed':'cb-c8','Petrified':'cb-c9',
+  'Poisoned':'cb-c10','Prone':'cb-c11','Restrained':'cb-c12',
+  'Stunned':'cb-c13','Unconscious':'cb-c14','Exhausted':'cb-c15',
+  'Bless':'cb-c16','Bane':'cb-c17','Haste':'cb-c18','Slow':'cb-c19'
+};
+const COVER_NEXT  = {none:'half',half:'three',three:'total',total:'none'};
+const COVER_BONUS = {none:0,half:2,three:5,total:0};
+const COVER_LABEL = {none:'No Cover',half:'Half Cover (+2)',three:'¾ Cover (+5)',total:'Full Cover'};
+const COVER_CLS   = {none:'',half:'c-half',three:'c-three',total:'c-total'};
+
+// ======================================================
+// SPELL LINKS & STATBLOCKS
+// ======================================================
+function sl(n,s){
+  const slug=s||n.toLowerCase().replace(/'/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  return `<a class="spell-link" href="https://dnd5e.wikidot.com/spell:${slug}" target="_blank" onclick="event.stopPropagation()">${n}</a>`;
+}
+
+function arcanalothBlock(){return `<div class="sb">
+<div class="sb-name">Neferon — Arcanaloth</div>
+<div class="sb-meta">Medium fiend (yugoloth), neutral evil · MM 2014 p.313</div>
+<hr class="sb-hr">
+<div class="sb-row">
+  <span><span class="sb-l">AC</span> 17 (natural armor)</span>
+  <span><span class="sb-l">HP</span> 104 (16d8+32)</span>
+  <span><span class="sb-l">Speed</span> 30 ft.</span>
+</div>
+<div class="sb-stats">
+  <div><div class="sn">SIŁ</div><div class="sv">14</div><div class="sm">+2</div></div>
+  <div><div class="sn">ZRE</div><div class="sv">14</div><div class="sm">+2</div></div>
+  <div><div class="sn">BUD</div><div class="sv">14</div><div class="sm">+2</div></div>
+  <div><div class="sn">INT</div><div class="sv">20</div><div class="sm">+5</div></div>
+  <div><div class="sn">MĄD</div><div class="sv">16</div><div class="sm">+3</div></div>
+  <div><div class="sn">CHA</div><div class="sv">17</div><div class="sm">+3</div></div>
+</div>
+<hr class="sb-hr">
+<div class="sb-row"><span><span class="sb-l">Saving Throws</span> Int +9, Wis +7, Cha +7</span></div>
+<div class="sb-row"><span><span class="sb-l">Resistances</span> fire, cold; nonmagical B/P/S</span></div>
+<div class="sb-row"><span><span class="sb-l">Immunities</span> acid, poison; Poisoned condition</span></div>
+<div class="sb-row"><span><span class="sb-l">Senses</span> truesight 120 ft., darkvision 60 ft.</span></div>
+<div class="sb-row"><span><span class="sb-l">Languages</span> Abyssal, Common, Infernal, Yugoloth; telepathy 60 ft.</span></div>
+<div class="sb-row"><span><span class="sb-l">CR</span> 12 (8,400 XP)</span></div>
+<hr class="sb-hr">
+<div class="sb-sec"><div class="sb-stitle">TRAITS</div>
+<p><strong>Magic Resistance.</strong> Advantage on saving throws against spells and magical effects.</p>
+<p><strong>Innate Spellcasting</strong> (CHA DC 15). At will: ${sl('Alter Self','alter-self')}, ${sl('Darkness','darkness')}, ${sl('Detect Magic','detect-magic')}, ${sl('Detect Thoughts','detect-thoughts')}, ${sl('Dispel Magic','dispel-magic')}, ${sl('Invisibility','invisibility')}, ${sl('Magic Missile','magic-missile')}, ${sl('Suggestion','suggestion')}. 3/day each: ${sl('Fear','fear')}, ${sl('Fireball','fireball')}, ${sl('Ice Storm','ice-storm')}, ${sl('Identify','identify')}.</p>
+<p><strong>Spellcasting</strong> (Wizard 16, INT DC 17, +9 to hit). Spell levels 1–8.</p>
+</div>
+<div class="sb-sec"><div class="sb-stitle">SPELLS — selected</div>
+<p>Cantripy: ${sl('Fire Bolt','fire-bolt')}, ${sl('Mage Hand','mage-hand')}, ${sl('Minor Illusion','minor-illusion')}, ${sl('Prestidigitation','prestidigitation')}</p>
+<p>K1: ${sl('Alarm','alarm')}, ${sl('Magic Missile','magic-missile')}, ${sl('Shield','shield')}</p>
+<p>K2: ${sl('Darkness','darkness')}, ${sl('Invisibility','invisibility')}, ${sl('Suggestion','suggestion')}</p>
+<p>K3: ${sl('Bestow Curse','bestow-curse')}, ${sl('Counterspell','counterspell')}, ${sl('Dispel Magic','dispel-magic')}, ${sl('Fireball','fireball')}, ${sl('Fly','fly')}, ${sl('Gaseous Form','gaseous-form')}</p>
+<p>K4: ${sl('Arcane Eye','arcane-eye')}, ${sl('Banishment','banishment')}, ${sl('Fire Shield','fire-shield')}, ${sl('Polymorph','polymorph')}</p>
+<p>K5: ${sl('Contact Other Plane','contact-other-plane')}, ${sl('Hold Monster','hold-monster')}, ${sl('Wall of Force','wall-of-force')}</p>
+<p>K6: ${sl('Chain Lightning','chain-lightning')}, ${sl('Disintegrate','disintegrate')}, ${sl('True Seeing','true-seeing')}</p>
+<p>K7: ${sl('Finger of Death','finger-of-death')}, ${sl('Teleport','teleport')}</p>
+<p>K8: ${sl('Dominate Monster','dominate-monster')}, ${sl('Feeblemind','feeblemind')}</p>
+</div>
+<div class="sb-sec"><div class="sb-stitle">ACTIONS</div>
+<p><strong>Multiattack.</strong> Two Claw attacks or one Spellcasting action.</p>
+<p><strong>Claw.</strong> +7 to hit, reach 5 ft. Hit: 8 (2d6+2) slashing + 9 (2d8) acid.</p>
+<p><strong>Teleport.</strong> Magically teleports up to 60 ft. to a visible unoccupied space.</p>
+</div>
+</div>`;}
+
+function flameSkullBlock(){return `<div class="sb">
+<div class="sb-name">Flameskull</div>
+<div class="sb-meta">Small undead, neutral evil · MM 2014 p.134</div>
+<hr class="sb-hr">
+<div class="sb-row">
+  <span><span class="sb-l">AC</span> 13</span>
+  <span><span class="sb-l">HP</span> 40 (9d8)</span>
+  <span><span class="sb-l">Speed</span> 0 ft., fly 40 ft. (hover)</span>
+</div>
+<div class="sb-stats">
+  <div><div class="sn">SIŁ</div><div class="sv">1</div><div class="sm">−5</div></div>
+  <div><div class="sn">ZRE</div><div class="sv">17</div><div class="sm">+3</div></div>
+  <div><div class="sn">BUD</div><div class="sv">10</div><div class="sm">+0</div></div>
+  <div><div class="sn">INT</div><div class="sv">16</div><div class="sm">+3</div></div>
+  <div><div class="sn">MĄD</div><div class="sv">10</div><div class="sm">+0</div></div>
+  <div><div class="sn">CHA</div><div class="sv">11</div><div class="sm">+0</div></div>
+</div>
+<hr class="sb-hr">
+<div class="sb-row"><span><span class="sb-l">Resistances</span> fire; nonmagical B/P/S</span></div>
+<div class="sb-row"><span><span class="sb-l">Immunities</span> cold, lightning, poison; many undead conditions</span></div>
+<div class="sb-row"><span><span class="sb-l">Senses</span> darkvision 60 ft.</span></div>
+<div class="sb-row"><span><span class="sb-l">CR</span> 4 (1,100 XP)</span></div>
+<hr class="sb-hr">
+<div class="sb-sec"><div class="sb-stitle">TRAITS</div>
+<p><strong>Rejuvenation.</strong> If destroyed, rises again in 1 hour with 1 HP unless holy water or ${sl('Dispel Evil and Good','dispel-evil-and-good')} is used on its remains.</p>
+<p><strong>Magic Resistance.</strong> Advantage on saving throws against spells and magical effects.</p>
+<p><strong>Spellcasting</strong> (Wizard 5, INT DC 13, +5 to hit).</p>
+</div>
+<div class="sb-sec"><div class="sb-stitle">SPELLS</div>
+<p>Level 1 (3 slots): ${sl('Magic Missile','magic-missile')}, ${sl('Shield','shield')}</p>
+<p>Level 2 (2 slots): ${sl('Blur','blur')}, ${sl('Flaming Sphere','flaming-sphere')}</p>
+<p>Level 3 (1 slot): ${sl('Fireball','fireball')}</p>
+</div>
+<div class="sb-sec"><div class="sb-stitle">ACTIONS</div>
+<p><strong>Multiattack.</strong> Two Fire Ray attacks.</p>
+<p><strong>Fire Ray.</strong> +5 to hit, range 30 ft. Hit: 10 (3d6) fire damage.</p>
+</div>
+</div>`;}
+
+// ======================================================
+// STATE FACTORIES
+// ======================================================
+function mkSlots(spec){
+  const used={};
+  Object.keys(spec).forEach(k=>used[k]=0);
+  return{max:{...spec},used};
+}
+function mkPC(id,name,sub,ac,maxHp,init=0){
+  return{id,name,subname:sub,type:'pc',init,ac,hp:maxHp,maxHp,tempHp:0,
+    cover:'none',conditions:[],conc:false,
+    actions:{a:false,b:false,r:false,m:false},
+    spellSlots:null,legendaryMax:0,legendaryUsed:0,
+    monster:null,deathS:0,deathF:0,notes:''};
+}
+function mkEnemy(id,name,sub,ac,maxHp,monster,slotsSpec,init=0){
+  return{id,name,subname:sub,type:'enemy',init,ac,hp:maxHp,maxHp,tempHp:0,
+    cover:'none',conditions:[],conc:false,
+    actions:{a:false,b:false,r:false,m:false},
+    spellSlots:slotsSpec?mkSlots(slotsSpec):null,
+    legendaryMax:0,legendaryUsed:0,
+    monster,deathS:0,deathF:0,notes:''};
+}
+function initialCombatants(){
+  return[
+    mkPC('anr',"An'r May",'Drow · Sorcerer / Shadow Magic',13,44),
+    mkPC('finnek','Finnek von Shrot','Gnome · Artificer / Arcane Artillerist',16,52),
+    mkPC('guo','Guo','Human · Cleric / Peace Domain',18,60),
+    mkPC('szept','Szeptomir','Half-Elf · Rogue / Arcane Trickster',15,52),
+    mkPC('tygrum','Tygrum','Dwarf · Paladin / Oath of Vengeance',19,68),
+    mkPC('eona','Eona','Halfling · Barbarian / Path of the Berserker',14,75),
+    mkEnemy('neferon','Neferon','Arcanaloth · CR 12',17,104,'arcanaloth',{1:4,2:3,3:3,4:3,5:2,6:1,7:1,8:1}),
+    mkEnemy('flame1','Flameskull #1','Flameskull · CR 4',13,40,'flameskull',{1:3,2:2,3:1}),
+    mkEnemy('flame2','Flameskull #2','Flameskull · CR 4',13,40,'flameskull',{1:3,2:2,3:1}),
+    mkEnemy('flame3','Flameskull #3','Flameskull · CR 4',13,40,'flameskull',{1:3,2:2,3:1}),
+  ];
+}
+
+// ======================================================
+// STATE
+// ======================================================
+let S={
+  round:1,turnIndex:0,
+  combatants:initialCombatants(),
+  expanded:{},activeTab:{},
+  concSaves:[],
+  showExport:false,showEnvForm:false,showAddForm:false,
+  addFormType:'pc',
+  formErrors:{},
+  toast:null,toastTimer:null,
+  pendingDmg:{},
+  quickCondId:null,
+  multiMode:false,
+  selected:{},
+  aoeAmt:10,
+};
+
+// ======================================================
+// HELPERS
+// ======================================================
+const getC=id=>S.combatants.find(c=>c.id===id);
+function effAC(c){return c.ac+(COVER_BONUS[c.cover]||0)}
+function hpColor(c){
+  if(c.hp<=0)return'var(--hp-lo)';
+  const p=c.hp/c.maxHp;
+  if(p>0.5)return'var(--hp-hi)';
+  if(p>0.25)return'var(--hp-md)';
+  return'var(--hp-lo)';
+}
+function hpPct(c){return c.maxHp>0?Math.max(0,Math.min(100,c.hp/c.maxHp*100)):0}
+function spellSum(c){
+  if(!c.spellSlots)return null;
+  const{max,used}=c.spellSlots;
+  const a=Object.keys(max).reduce((s,k)=>s+max[k]-(used[k]||0),0);
+  const t=Object.keys(max).reduce((s,k)=>s+max[k],0);
+  return`${a}/${t}`;
+}
+function isDowned(c){return c.type==='pc'&&c.hp<=0}
+function defaultTab(c){return(c.type==='env'||c.type==='lair')?'notes':'hp'}
+function uid(){return'cx_'+Date.now()+'_'+(Math.random()*1e4|0)}
+function getPdmg(id){return S.pendingDmg[id]!==undefined?S.pendingDmg[id]:1}
+function scrollToActive(){
+  setTimeout(()=>{
+    const el=document.querySelector('.cbt.is-active');
+    const list=document.getElementById('list');
+    if(el&&list){const t=el.offsetTop,h=el.offsetHeight,lh=list.clientHeight;list.scrollTop=t-(lh/2)+(h/2);}
+  },60);
+}
+function showToast(msg){
+  if(S.toastTimer)clearTimeout(S.toastTimer);
+  S.toast=msg;render();
+  S.toastTimer=setTimeout(()=>{S.toast=null;render();},2500);
+}
+
+// ======================================================
+// GAME LOGIC
+// ======================================================
+function applyDamage(c,amt){
+  if(amt<=0)return;
+  let rem=amt;
+  if(c.tempHp>0){const abs=Math.min(c.tempHp,rem);c.tempHp-=abs;rem-=abs;}
+  c.hp=Math.max(0,c.hp-rem);
+  if(c.conc&&rem>0){
+    const dc=Math.max(10,Math.floor(rem/2));
+    S.concSaves.push({key:c.id+'_'+Date.now(),name:c.name,dc,damage:rem});
+  }
+  if(c.hp<=0){c.conc=false;}
+}
+function applyHeal(c,amt){
+  if(amt<=0)return;
+  if(c.hp<=0&&c.type==='pc'){c.deathS=0;c.deathF=0;}
+  c.hp=Math.min(c.maxHp,c.hp+amt);
+}
+function nextTurn(){
+  if(!S.combatants.length)return;
+  S.turnIndex=(S.turnIndex+1)%S.combatants.length;
+  if(S.turnIndex===0)S.round++;
+  const c=S.combatants[S.turnIndex];
+  c.actions={a:false,b:false,r:false,m:false};
+  c.legendaryUsed=0;
+}
+function prevTurn(){
+  if(!S.combatants.length)return;
+  if(S.turnIndex===0){if(S.round>1)S.round--;S.turnIndex=S.combatants.length-1;}
+  else S.turnIndex--;
+}
+function sortByInit(){
+  S.combatants.sort((a,b)=>b.init-a.init);
+  S.turnIndex=0;
+}
+function resetCombat(){
+  if(!confirm('Reset combat?\n\nInitiative, conditions, actions and spell slots will be cleared.\nHP and AC are preserved.'))return;
+  S.round=1;S.turnIndex=0;S.concSaves=[];
+  S.combatants=S.combatants.filter(c=>c.type==='pc'||c.type==='enemy');
+  S.combatants.forEach(c=>{
+    c.init=0;c.conditions=[];c.conc=false;c.cover='none';
+    c.actions={a:false,b:false,r:false,m:false};
+    if(c.spellSlots)Object.keys(c.spellSlots.used).forEach(k=>c.spellSlots.used[k]=0);
+    c.legendaryUsed=0;c.deathS=0;c.deathF=0;
+  });
+}
+
+// ======================================================
+// RENDER
+// ======================================================
+function render(){
+  const focused=document.activeElement;
+  const fk=focused?.dataset?.fk;
+  const fStart=focused?.selectionStart;
+  const fEnd=focused?.selectionEnd;
+
+  document.getElementById('app').innerHTML=buildApp();
+
+  // Restore non-fk input values
+  S.combatants.forEach(c=>{
+    const dEl=document.querySelector(`[data-dmg-id="${c.id}"]`);
+    if(dEl&&document.activeElement!==dEl)dEl.value=getPdmg(c.id);
+  });
+
+  if(fk){
+    const el=document.querySelector(`[data-fk="${fk}"]`);
+    if(el){
+      el.focus();
+      if(typeof fStart==='number'&&typeof el.setSelectionRange==='function'){
+        try{el.setSelectionRange(fStart,fEnd);}catch(_){}
+      }
+    }
+  }
+}
+
+function buildApp(){
+  const act=S.combatants[S.turnIndex];
+  const listContent=S.combatants.length?S.combatants.map((c,i)=>buildCombatant(c,i)).join(''):`<div class="empty-state"><h3>No Combatants</h3><p>Click <em>Add Combatant</em> in the toolbar, or import a saved state via Export / Import.</p></div>`;
+  return`${buildHeader(act)}${S.concSaves.length?buildConcBanner():''}${buildToolbar()}${S.multiMode?buildMultiBar():''}${S.showEnvForm?buildEnvForm():''}${S.showAddForm?buildAddForm():''}${S.showExport?buildExportPanel():''}<div id="list">${listContent}</div>${S.toast?`<div id="toast">${S.toast}</div>`:''}`;
+}
+
+function buildHeader(act){
+  const name=act?act.name:'—';
+  const tl=act?({pc:'· PC',enemy:'· Enemy',env:'· Effect',lair:'· Lair'}[act.type]||''):'';
+  const ni=(S.combatants.length>1)?(S.turnIndex+1)%S.combatants.length:-1;
+  const nextName=ni>=0?S.combatants[ni].name:'—';
+  return`<div id="header">
+<div class="hdr-runda">ROUND&nbsp;<span>${S.round}</span></div>
+<div class="hdr-name" title="${name}">${name} <span style="font-size:10px;color:var(--text-md);font-weight:400">${tl}</span></div>
+${ni>=0?`<div class="next-lbl">Next&nbsp;<b>${nextName}</b></div>`:''}
+<div class="hdr-nav">
+  <button class="btn btn-sm" data-act="prev-turn" title="Previous turn [←]"><i class="ti ti-chevron-left"></i></button>
+  <button class="btn btn-gold" data-act="next-turn" title="Next Turn [Space / →]"><i class="ti ti-player-skip-forward"></i>&nbsp;Next Turn</button>
+  <button class="btn btn-sm" data-act="sort" title="Sort by initiative"><i class="ti ti-sort-descending-numbers"></i>&nbsp;Sort</button>
+</div>
+<div class="kbd-hint"><span class="kbd">Space</span>&nbsp;Next&nbsp;&nbsp;<span class="kbd">←→</span>&nbsp;Prev/Next</div>
+</div>`;
+}
+
+function buildConcBanner(){
+  const items=S.concSaves.map(s=>`<div class="conc-item">
+<span class="conc-who">${s.name}</span>
+<span class="conc-info">took ${s.damage} damage</span>
+<span class="conc-dc">DC ${s.dc}</span>
+<span class="conc-info">Constitution save — Concentration</span>
+<button class="btn btn-sm" data-act="close-conc" data-key="${s.key}"><i class="ti ti-x"></i></button>
+</div>`).join('');
+  return`<div id="conc-banner"><div class="conc-title">⚠&nbsp;&nbsp;CONCENTRATION SAVE REQUIRED</div>${items}</div>`;
+}
+
+function buildToolbar(){
+  return`<div id="toolbar">
+<button class="btn btn-sm btn-gold" data-act="roll-initiative" title="Roll d20 for all combatants with initiative = 0"><i class="ti ti-dice-d20"></i>&nbsp;Roll Initiative</button>
+<button class="btn btn-sm ${S.multiMode?'btn-red':''}" data-act="toggle-multi" title="Multi-target damage mode"><i class="ti ti-checkboxes"></i>&nbsp;${S.multiMode?'Cancel Multi':'Multi-target'}</button>
+<span style="margin-left:4px;border-left:1px solid var(--border);height:20px;display:inline-block"></span>
+<button class="btn btn-sm" data-act="add-env"><i class="ti ti-cloud-storm"></i>&nbsp;Environment Effect</button>
+<button class="btn btn-sm" data-act="add-lair"><i class="ti ti-castle"></i>&nbsp;Lair Action</button>
+<button class="btn btn-sm btn-blue" data-act="toggle-add"><i class="ti ti-user-plus"></i>&nbsp;Add Combatant</button>
+<button class="btn btn-sm" data-act="toggle-export"><i class="ti ti-database-export"></i>&nbsp;Export / Import</button>
+<span style="flex:1"></span>
+<button class="btn btn-sm btn-red" data-act="reset-combat" title="Reset combat (danger)"><i class="ti ti-refresh"></i>&nbsp;Reset</button>
+</div>`;
+}
+
+function buildMultiBar(){
+  const sel=Object.values(S.selected).filter(Boolean).length;
+  return`<div class="multi-bar">
+<span class="multi-lbl"><i class="ti ti-checkboxes"></i>&nbsp;MULTI-TARGET MODE</span>
+<span style="font-size:11px;color:var(--text-md)">${sel} selected</span>
+<input class="hp-amt" style="width:60px" type="number" min="0" value="${S.aoeAmt}" data-act="set-aoe" title="Damage amount">
+<button class="btn btn-sm btn-red" data-act="apply-aoe" ${sel===0?'disabled style="opacity:.5"':''}>Apply Damage to Selected</button>
+<button class="btn btn-sm" data-act="select-all-enemies" title="Select all enemies">All Enemies</button>
+<button class="btn btn-sm" data-act="clear-selection" title="Deselect all">Clear</button>
+</div>`;
+}
+function buildEnvForm(){
+  return`<div class="panel-block"><div class="panel-title"><i class="ti ti-cloud-storm"></i>New Environment Effect</div>
+<div class="env-row">
+<div class="fg"><div class="flbl">Name</div><input class="finp2" style="width:180px" data-fk="env-name" id="ef-name" placeholder="e.g. Curse Fog, Silence Zone"></div>
+<div class="fg"><div class="flbl">Initiative</div><input class="finp2" style="width:70px" type="number" data-fk="env-init" id="ef-init" value="0"></div>
+<div class="form-actions" style="margin-top:0">
+<button class="btn btn-green btn-sm" data-act="confirm-env"><i class="ti ti-plus"></i>&nbsp;Add</button>
+<button class="btn btn-sm" data-act="cancel-env"><i class="ti ti-x"></i>&nbsp;Cancel</button>
+</div></div></div>`;
+}
+
+function buildAddForm(){
+  const isPC=S.addFormType==='pc';
+  const e=S.formErrors;
+  const slotFields=[1,2,3,4,5,6,7,8].map(k=>`<div class="fg"><div class="flbl">Level ${k}</div><input class="finp2" type="number" min="0" max="9" data-fk="as${k}" id="as-slot${k}" value="0"></div>`).join('');
+  return`<div class="panel-block" id="add-form-panel">
+<div class="panel-title"><i class="ti ti-user-plus"></i>Add Combatant</div>
+<div class="type-tgl">
+<button class="type-btn ${isPC?'s-pc':''}" data-act="set-add-type" data-val="pc">PC (Player Character)</button>
+<button class="type-btn ${!isPC?'s-en':''}" data-act="set-add-type" data-val="enemy">Enemy / NPC</button>
+</div>
+<div class="form-grid">
+<div class="fg span2"><div class="flbl">Name *</div>
+<input class="finp2 ${e.name?'err':''}" data-fk="add-name" id="af-name" placeholder="${isPC?'e.g. Kaelindra Moonwhisper':'e.g. Vampire #2, Wraith'}">
+${e.name?`<div class="ferr">${e.name}</div>`:''}${e.namew?`<div class="fwarn">${e.namew}</div>`:''}
+</div>
+<div class="fg span2"><div class="flbl">Subtitle</div>
+<input class="finp2" data-fk="add-sub" id="af-sub" placeholder="${isPC?'Race · Class Level':'CR X · Type · Size'}">
+</div>
+<div class="fg"><div class="flbl">Initiative</div><input class="finp2" type="number" data-fk="add-init" id="af-init" value="0"></div>
+<div class="fg"><div class="flbl">AC (Armor Class) *</div><input class="finp2 ${e.ac?'err':''}" type="number" min="0" data-fk="add-ac" id="af-ac" value="10">${e.ac?`<div class="ferr">${e.ac}</div>`:''}</div>
+<div class="fg"><div class="flbl">Max HP *</div><input class="finp2 ${e.mhp?'err':''}" type="number" min="1" data-fk="add-mhp" id="af-mhp" value="1">${e.mhp?`<div class="ferr">${e.mhp}</div>`:''}</div>
+<div class="fg"><div class="flbl">Current HP</div><input class="finp2" type="number" data-fk="add-hp" id="af-hp" placeholder="= Max HP"></div>
+<div class="fg"><div class="flbl">Temp HP</div><input class="finp2" type="number" min="0" data-fk="add-thp" id="af-thp" value="0"></div>
+<div class="fg span2"><div class="flbl">Notes</div><textarea class="finp2 notes-ta" style="height:55px" data-fk="add-notes" id="af-notes" placeholder="Optional starting notes..."></textarea></div>
+${!isPC?`<div class="fg span2"><div class="fsec"><i class="ti ti-wand"></i>&nbsp;Spell Slots (optional)</div><div class="slots-grid">${slotFields}</div></div>
+<div class="fg"><div class="fsec"><i class="ti ti-crown"></i>&nbsp;Legendary Actions (max)</div><input class="finp2" type="number" min="0" max="6" data-fk="add-leg" id="af-leg" value="0"></div>`:''}
+</div>
+<div class="form-actions">
+<button class="btn btn-green" data-act="confirm-add"><i class="ti ti-plus"></i>&nbsp;Add Combatant</button>
+<button class="btn" data-act="cancel-add"><i class="ti ti-x"></i>&nbsp;Cancel</button>
+</div></div>`;
+}
+
+function buildExportPanel(){
+  const json=JSON.stringify({round:S.round,turnIndex:S.turnIndex,combatants:S.combatants},null,2);
+  return`<div class="panel-block"><div class="panel-title"><i class="ti ti-database-export"></i>Export / Import Combat State</div>
+<textarea class="export-ta" id="ex-ta" data-fk="ex-ta">${json}</textarea>
+<div class="ex-btns">
+<button class="btn btn-sm btn-gold" data-act="copy-export"><i class="ti ti-copy"></i>&nbsp;Copy JSON</button>
+<button class="btn btn-sm" data-act="dl-export"><i class="ti ti-download"></i>&nbsp;Download .json</button>
+<button class="btn btn-sm btn-blue" data-act="import-state"><i class="ti ti-database-import"></i>&nbsp;Import</button>
+<button class="btn btn-sm" data-act="toggle-export"><i class="ti ti-x"></i>&nbsp;Close</button>
+</div></div>`;
+}
+
+// ======================================================
+// COMBATANT CARD
+// ======================================================
+function buildCombatant(c,idx){
+  const isAct=idx===S.turnIndex;
+  const isExp=!!S.expanded[c.id];
+  const isDwn=isDowned(c);
+  const hasHP=c.type==='pc'||c.type==='enemy';
+  const allDone=hasHP&&c.actions.a&&c.actions.b&&c.actions.r&&c.actions.m;
+  const cls=`cbt t-${c.type}${isAct?' is-active':''}${isDwn?' is-downed':''}${allDone&&!isAct?' is-done':''}`;
+  const tab=S.activeTab[c.id]||defaultTab(c);
+  const chk=S.multiMode&&hasHP?`<input type="checkbox" class="cbt-checkbox" ${S.selected[c.id]?'checked':''} data-act="toggle-select" data-id="${c.id}" onclick="event.stopPropagation()" title="Select for AoE damage">`:'';
+  return`<div class="${cls}" data-id="${c.id}">${chk}
+${buildCbtHead(c,isExp)}
+${buildStatusBar(c)}
+${S.quickCondId===c.id?buildQuickCondPanel(c):''}
+${isExp?`<div class="cbt-exp">${buildTabs(c,tab)}${buildTabBody(c,tab)}</div>`:''}
+</div>`;
+}
+
+function buildCbtHead(c,isExp){
+  const hpC=hpColor(c);
+  const pct=hpPct(c);
+  const hasHP=c.type==='pc'||c.type==='enemy';
+  const dmgAmt=getPdmg(c.id);
+  return`<div class="cbt-head" data-act="toggle-expand" data-id="${c.id}">
+<div class="init-wrap" onclick="event.stopPropagation()">
+<input class="init-inp" type="number" data-act="set-init" data-fk="init-${c.id}" data-id="${c.id}" value="${c.init}" title="Initiative">
+</div>
+<div class="nameblock">
+<div class="cbt-name">${c.name}</div>
+<div class="cbt-sub">${c.subname}</div>
+</div>
+${hasHP?`<div class="hp-block" onclick="event.stopPropagation()">
+<div class="hp-row">
+<div class="hp-nums">
+<span class="hp-cur" style="color:${hpC}">${c.hp}</span>
+<span class="hp-sep">&nbsp;/&nbsp;</span>
+<span class="hp-max">${c.maxHp}</span>
+${c.tempHp>0?`<span class="hp-tmp">(+${c.tempHp})</span>`:''}
+</div>
+<div class="hp-ctrl">
+<button class="btn btn-sm btn-red btn-icon" data-act="damage" data-id="${c.id}" title="Deal damage">−</button>
+<input class="hp-amt" type="number" min="0" value="${dmgAmt}" data-dmg-id="${c.id}" data-fk="dmg-${c.id}" title="Amount">
+<button class="btn btn-sm btn-green btn-icon" data-act="heal" data-id="${c.id}" title="Heal">+</button>
+</div>
+</div>
+<div class="hp-bar-wrap"><div class="hp-bar" style="width:${pct}%;background:${hpC}"></div></div>
+</div>`:''}
+<button class="btn btn-sm btn-icon" style="opacity:.6" data-act="remove" data-id="${c.id}" onclick="event.stopPropagation()" title="Remove combatant"><i class="ti ti-trash"></i></button>
+<div class="chevron${isExp?' open':''}"><i class="ti ti-chevron-right"></i></div>
+</div>`;
+}
+
+function buildStatusBar(c){
+  const hasHP=c.type==='pc'||c.type==='enemy';
+  let p='';
+  if(hasHP){
+    const eff=effAC(c);
+    const bon=COVER_BONUS[c.cover];
+    const acTxt=c.cover==='total'?`AC ∞ (Full)`:bon>0?`AC ${eff} (${c.ac}+${bon})`:`AC ${eff}`;
+    p+=`<span class="pill ${COVER_CLS[c.cover]}" data-act="cycle-cover" data-id="${c.id}" title="${COVER_LABEL[c.cover]}">${acTxt}</span>`;
+    const acts=[{k:'a',l:'Action',t:'Action'},{k:'b',l:'Bonus',t:'Bonus Action'},{k:'r',l:'Reaction',t:'Reaction'},{k:'m',l:'Move',t:'Movement'}];
+    p+=`<span class="act-dots">${acts.map(a=>`<span class="act-dot${c.actions[a.k]?' used':''}" data-act="toggle-action" data-id="${c.id}" data-val="${a.k}" title="${a.t}">${a.l}</span>`).join('')}</span>`;
+  }
+  const ss=spellSum(c);
+  if(ss!==null){const isDepl=ss.startsWith('0/');p+=`<span class="pill pill-sp${isDepl?' depleted':''}" data-act="go-tab" data-id="${c.id}" data-val="spells" title="${isDepl?'No spell slots remaining':'Spell Slots'}"><i class="ti ti-wand"></i>&nbsp;${ss}</span>`;}
+  if(c.legendaryMax>0){const ll=c.legendaryMax-c.legendaryUsed;p+=`<span class="pill pill-leg" data-act="go-tab" data-id="${c.id}" data-val="legendary" title="Legendary Actions"><i class="ti ti-crown"></i>&nbsp;${ll}/${c.legendaryMax}</span>`;}
+  if(c.conc)p+=`<span class="cb cb-conc" data-act="toggle-conc" data-id="${c.id}" title="Click to drop concentration"><i class="ti ti-eye"></i>&nbsp;Concentration</span>`;
+  c.conditions.forEach(cd=>{const cc=COND_CSS[cd]||'cb-def';p+=`<span class="cb ${cc}" data-act="remove-cond" data-id="${c.id}" data-val="${cd}" title="Click to remove: ${cd}">${cd}</span>`;});
+  if(hasHP&&c.actions.a&&c.actions.b&&c.actions.r&&c.actions.m)p+=`<span class="done-badge">DONE</span>`;
+  if(hasHP)p+=`<span class="pill" style="font-size:10px;padding:1px 6px;font-family:Lato,sans-serif" data-act="toggle-quick-cond" data-id="${c.id}" title="Quick-add condition without expanding">+&nbsp;Cond</span>`;
+  return`<div class="status-bar">${p}</div>`;
+}
+
+// ======================================================
+// QUICK CONDITION PANEL
+// ======================================================
+function buildQuickCondPanel(c){
+  const act=new Set(c.conditions);
+  const btns=CONDITIONS.map(cd=>`<button class="qc-btn${act.has(cd)?' on':''}" data-act="toggle-cond" data-id="${c.id}" data-val="${cd}">${cd}</button>`).join('');
+  return`<div class="quick-cond-panel">${btns}<button class="btn btn-sm" style="margin-left:auto" data-act="toggle-quick-cond" data-id="${c.id}"><i class="ti ti-x"></i></button></div>`;
+}
+// ======================================================
+// TABS
+// ======================================================
+function getTabsFor(c){
+  const t=[];
+  if(c.type==='pc'||c.type==='enemy'){
+    t.push({id:'hp',label:'HP / AC / Cover'});
+    t.push({id:'conditions',label:'Conditions'});
+  }
+  if(c.spellSlots)t.push({id:'spells',label:'Spell Slots'});
+  if(c.monster)t.push({id:'statblock',label:'Statblock'});
+  if(c.type==='enemy')t.push({id:'legendary',label:'Legendary'});
+  if((c.type==='pc'||c.type==='enemy')&&isDowned(c))t.push({id:'death',label:'Death Saves'});
+  t.push({id:'notes',label:'Notes'});
+  return t;
+}
+function buildTabs(c,active){
+  return`<div class="tabs">${getTabsFor(c).map(t=>`<div class="tab${t.id===active?' on':''}" data-act="go-tab" data-id="${c.id}" data-val="${t.id}">${t.label}</div>`).join('')}</div>`;
+}
+function buildTabBody(c,tab){
+  const content={
+    hp:buildHpTab,conditions:buildCondTab,spells:buildSpellTab,
+    statblock:buildStatblockTab,legendary:buildLegendaryTab,
+    death:buildDeathTab,notes:buildNotesTab
+  }[tab];
+  return`<div class="tab-body">${content?content(c):'<span style="color:var(--text-md)">—</span>'}</div>`;
+}
+
+function buildHpTab(c){
+  return`<div class="frow"><label>Current HP</label><input class="finp" type="number" data-act="edit-hp" data-id="${c.id}" data-fk="hp-${c.id}" value="${c.hp}"></div>
+<div class="frow"><label>Max HP</label><input class="finp" type="number" min="1" data-act="edit-maxhp" data-id="${c.id}" data-fk="mhp-${c.id}" value="${c.maxHp}"></div>
+<div class="frow"><label>Temp HP</label><input class="finp" type="number" min="0" data-act="edit-temphp" data-id="${c.id}" data-fk="thp-${c.id}" value="${c.tempHp}"></div>
+<div class="frow"><label>Armor Class</label><input class="finp" type="number" min="0" data-act="edit-ac" data-id="${c.id}" data-fk="ac-${c.id}" value="${c.ac}"></div>
+<div class="frow"><label>Cover</label>
+<select class="fsel" data-act="set-cover" data-id="${c.id}" data-fk="cov-${c.id}">
+<option value="none" ${c.cover==='none'?'selected':''}>No Cover</option>
+<option value="half" ${c.cover==='half'?'selected':''}>Half Cover (+2 AC & DEX)</option>
+<option value="three" ${c.cover==='three'?'selected':''}>¾ Cover (+5 AC & DEX)</option>
+<option value="total" ${c.cover==='total'?'selected':''}>Full Cover (cannot be targeted)</option>
+</select></div>`;
+}
+
+function buildCondTab(c){
+  const act=new Set(c.conditions);
+  const btns=CONDITIONS.map(cd=>`<button class="cond-btn${act.has(cd)?' on':''}" data-act="toggle-cond" data-id="${c.id}" data-val="${cd}">${cd}</button>`).join('');
+  return`<div class="cond-grid">${btns}</div>
+<div class="conc-row">
+<button class="btn btn-sm ${c.conc?'btn-blue':''}" data-act="toggle-conc" data-id="${c.id}"><i class="ti ti-eye${c.conc?'':'-off'}"></i>&nbsp;Concentration</button>
+<span class="conc-ind${c.conc?' on':''}">${c.conc?'Active — DC = max(10, ½ damage) on each hit':'Inactive'}</span>
+</div>`;
+}
+
+function buildSpellTab(c){
+  if(!c.spellSlots)return'<p style="color:var(--text-md)">No spell slots.</p>';
+  const{max,used}=c.spellSlots;
+  const rows=Object.keys(max).sort((a,b)=>a-b).map(k=>{
+    const m=max[k],u=used[k]||0,av=m-u;
+    const pips=Array.from({length:m},(_,i)=>`<span class="sp-pip ${i<av?'avail':'used'}" data-act="toggle-slot" data-id="${c.id}" data-val="${k}" data-pip="${i}" title="Level ${k}, slot ${i+1}"></span>`).join('');
+    return`<div class="sp-row"><span class="sp-lbl">Level ${k}</span><span class="sp-pips">${pips}</span><span class="sp-cnt">${av}/${m}</span></div>`;
+  }).join('');
+  return`${rows}<div class="sp-btns">
+<button class="btn btn-sm btn-green" data-act="long-rest" data-id="${c.id}"><i class="ti ti-moon"></i>&nbsp;Long Rest</button>
+<button class="btn btn-sm btn-red" data-act="burn-all" data-id="${c.id}"><i class="ti ti-flame"></i>&nbsp;Expend All</button>
+</div>`;
+}
+
+function buildStatblockTab(c){
+  if(c.monster==='arcanaloth')return arcanalothBlock();
+  if(c.monster==='flameskull')return flameSkullBlock();
+  return'<p style="color:var(--text-md)">Brak statblocku.</p>';
+}
+
+function buildLegendaryTab(c){
+  const m=c.legendaryMax,u=c.legendaryUsed;
+  const pips=m>0?Array.from({length:m},(_,i)=>`<span class="leg-pip ${i<(m-u)?'avail':'used'}" data-act="toggle-leg" data-id="${c.id}" data-pip="${i}" title="Legendary Action ${i+1}"></span>`).join(''):'';
+  return`<div class="frow"><label>Max Legendary Actions</label><input class="finp" type="number" min="0" max="6" data-act="edit-legmax" data-id="${c.id}" data-fk="lgm-${c.id}" value="${m}"></div>
+${m>0?`<div style="font-size:11px;color:var(--text-md);margin-bottom:4px">Available: ${m-u} / ${m}</div><div class="leg-pips">${pips}</div><div style="margin-top:8px"><button class="btn btn-sm" data-act="reset-leg" data-id="${c.id}"><i class="ti ti-refresh"></i>&nbsp;Reset</button></div>`:'<div style="color:var(--text-md);font-size:11px;margin-top:4px">Set Max > 0 to enable legendary actions (homebrew option).</div>'}`;
+}
+
+function buildDeathTab(c){
+  const suc=Array.from({length:3},(_,i)=>`<span class="dc-circle suc${i<c.deathS?' on':''}" data-act="death-tog" data-id="${c.id}" data-t="s" data-i="${i}" title="Success ${i+1}"></span>`).join('');
+  const fail=Array.from({length:3},(_,i)=>`<span class="dc-circle fail${i<c.deathF?' on':''}" data-act="death-tog" data-id="${c.id}" data-t="f" data-i="${i}" title="Failure ${i+1}"></span>`).join('');
+  return`<div style="margin-bottom:10px">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:11px;color:#4aca4a;width:70px">Success</span><div style="display:flex;gap:5px">${suc}</div></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:#ca4040;width:70px">Failure</span><div style="display:flex;gap:5px">${fail}</div></div>
+</div>
+<button class="btn btn-sm" data-act="death-reset" data-id="${c.id}"><i class="ti ti-refresh"></i>&nbsp;Reset Saves</button>`;
+}
+
+function buildNotesTab(c){
+  return`<textarea class="notes-ta" data-act="notes" data-id="${c.id}" data-fk="notes-${c.id}" placeholder="DM notes: spell durations, targets, tactics...">${c.notes}</textarea>`;
+}
+
+// ======================================================
+// EVENT DELEGATION
+// ======================================================
+document.addEventListener('input',e=>{
+  const el=e.target,act=el.dataset.act,id=el.dataset.id;
+  const dmgId=el.dataset.dmgId;
+  if(dmgId){S.pendingDmg[dmgId]=parseInt(el.value)||0;return;}
+  if(act==='set-aoe'){S.aoeAmt=parseInt(el.value)||0;return;}
+  if(!act)return;
+  const c=id?getC(id):null;
+  switch(act){
+    case'set-init':if(c)c.init=parseInt(el.value)||0;break;
+    case'notes':if(c)c.notes=el.value;break;
+    case'edit-hp':if(c){c.hp=Math.min(Math.max(parseInt(el.value)||0,0),c.maxHp);}break;
+    case'edit-maxhp':if(c){c.maxHp=Math.max(1,parseInt(el.value)||1);c.hp=Math.min(c.hp,c.maxHp);}break;
+    case'edit-temphp':if(c)c.tempHp=Math.max(0,parseInt(el.value)||0);break;
+    case'edit-ac':if(c)c.ac=Math.max(0,parseInt(el.value)||0);break;
+    case'edit-legmax':if(c){c.legendaryMax=Math.max(0,parseInt(el.value)||0);c.legendaryUsed=Math.min(c.legendaryUsed,c.legendaryMax);}break;
+  }
+});
+
+document.addEventListener('change',e=>{
+  const el=e.target,act=el.dataset.act,id=el.dataset.id;
+  if(act==='set-cover'){const c=getC(id);if(c){c.cover=el.value;render();}}
+});
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-act]');
+  if(!btn)return;
+  const act=btn.dataset.act,id=btn.dataset.id,val=btn.dataset.val;
+  const c=id?getC(id):null;
+  let doRender=true;
+
+  switch(act){
+    // ---- NAVIGATION ----
+    case'next-turn':nextTurn();render();scrollToActive();doRender=false;break;
+    case'prev-turn':prevTurn();render();scrollToActive();doRender=false;break;
+    case'sort':sortByInit();break;
+    case'reset-combat':resetCombat();break;
+
+    // ---- EXPAND ----
+    case'toggle-expand':
+      if(c){S.expanded[id]=!S.expanded[id];if(S.expanded[id]&&!S.activeTab[id])S.activeTab[id]=defaultTab(c);}
+      break;
+    case'go-tab':
+      if(c){S.expanded[id]=true;S.activeTab[id]=val;}
+      // Scroll element to center after render
+      doRender=true;
+      (()=>{const _id=id;setTimeout(()=>{
+        const el=document.querySelector(`.cbt[data-id="${_id}"]`);
+        const list=document.getElementById('list');
+        if(el&&list){const top=el.offsetTop,h=el.offsetHeight,lh=list.clientHeight;list.scrollTop=top-(lh/2)+(h/2);}
+      },60);})();
+      doRender=false;
+      break;
+
+    // ---- DAMAGE / HEAL ----
+    case'damage':{
+      if(!c)break;
+      const dEl=document.querySelector(`[data-dmg-id="${id}"]`);
+      const amt=parseInt(dEl?.value)||getPdmg(id);
+      S.pendingDmg[id]=amt;
+      applyDamage(c,amt);
+      // Instant visual feedback before full re-render
+      {const hc=document.querySelector(`.cbt[data-id="${id}"] .hp-cur`);if(hc){hc.textContent=c.hp;hc.style.color=hpColor(c);}
+      const hb=document.querySelector(`.cbt[data-id="${id}"] .hp-bar`);if(hb){hb.style.width=hpPct(c)+'%';hb.style.background=hpColor(c);}}
+      break;
+    }
+    case'heal':{
+      if(!c)break;
+      const hEl=document.querySelector(`[data-dmg-id="${id}"]`);
+      const amt=parseInt(hEl?.value)||getPdmg(id);
+      S.pendingDmg[id]=amt;
+      applyHeal(c,amt);
+      // Instant visual feedback before full re-render
+      {const hc=document.querySelector(`.cbt[data-id="${id}"] .hp-cur`);if(hc){hc.textContent=c.hp;hc.style.color=hpColor(c);}
+      const hb=document.querySelector(`.cbt[data-id="${id}"] .hp-bar`);if(hb){hb.style.width=hpPct(c)+'%';hb.style.background=hpColor(c);}}
+      break;
+    }
+
+    // ---- COVER ----
+    case'cycle-cover':if(c)c.cover=COVER_NEXT[c.cover];break;
+
+    // ---- ACTIONS ----
+    case'toggle-action':if(c)c.actions[val]=!c.actions[val];break;
+
+    // ---- CONDITIONS ----
+    case'toggle-cond':
+      if(c){const i=c.conditions.indexOf(val);if(i>=0)c.conditions.splice(i,1);else c.conditions.push(val);}break;
+    case'remove-cond':
+      if(c)c.conditions=c.conditions.filter(x=>x!==val);break;
+    case'toggle-conc':
+      if(c){c.conc=!c.conc;if(!c.conc)S.concSaves=S.concSaves.filter(s=>!s.key.startsWith(id));}break;
+
+    // ---- CONC SAVES ----
+    case'close-conc':
+      S.concSaves=S.concSaves.filter(s=>s.key!==btn.dataset.key);break;
+
+    // ---- SPELL SLOTS ----
+    case'toggle-slot':{
+      if(!c?.spellSlots)break;
+      const k=val,pip=parseInt(btn.dataset.pip);
+      const av=c.spellSlots.max[k]-(c.spellSlots.used[k]||0);
+      if(pip<av)c.spellSlots.used[k]=(c.spellSlots.used[k]||0)+1;
+      else c.spellSlots.used[k]=Math.max(0,(c.spellSlots.used[k]||0)-1);
+      break;
+    }
+    case'long-rest':
+      if(c?.spellSlots)Object.keys(c.spellSlots.used).forEach(k=>c.spellSlots.used[k]=0);break;
+    case'burn-all':
+      if(c?.spellSlots)Object.keys(c.spellSlots.used).forEach(k=>c.spellSlots.used[k]=c.spellSlots.max[k]);break;
+
+    // ---- LEGENDARY ----
+    case'toggle-leg':{
+      if(!c)break;
+      const pip=parseInt(btn.dataset.pip);
+      const av=c.legendaryMax-c.legendaryUsed;
+      if(pip<av)c.legendaryUsed=Math.min(c.legendaryMax,c.legendaryUsed+1);
+      else c.legendaryUsed=Math.max(0,c.legendaryUsed-1);
+      break;
+    }
+    case'reset-leg':if(c)c.legendaryUsed=0;break;
+
+    // ---- DEATH SAVES ----
+    case'death-tog':{
+      if(!c)break;
+      const t=btn.dataset.t,i=parseInt(btn.dataset.i);
+      if(t==='s'){c.deathS=i<c.deathS?i:i+1;}
+      else{c.deathF=i<c.deathF?i:i+1;}
+      if(c.deathS>=3){c.deathS=0;c.deathF=0;c.hp=1;showToast(`${c.name} — stabilized!`);doRender=false;}
+      else if(c.deathF>=3){c.deathS=0;c.deathF=0;showToast(`${c.name} — died!`);doRender=false;}
+      break;
+    }
+    case'death-reset':if(c){c.deathS=0;c.deathF=0;}break;
+
+    // ---- REMOVE ----
+    case'remove':{
+      if(!c)break;
+      if(!confirm(`Remove ${c.name} from combat?\nThis cannot be undone.`))break;
+      const idx=S.combatants.indexOf(c);
+      S.combatants.splice(idx,1);
+      if(S.combatants.length===0){S.turnIndex=0;}
+      else if(idx<S.turnIndex)S.turnIndex--;
+      else if(S.turnIndex>=S.combatants.length)S.turnIndex=S.combatants.length-1;
+      delete S.expanded[id];delete S.activeTab[id];delete S.pendingDmg[id];
+      break;
+    }
+
+    // ---- FORMS ----
+    case'toggle-add':S.showAddForm=!S.showAddForm;if(S.showAddForm)S.formErrors={};break;
+    case'cancel-add':S.showAddForm=false;break;
+    case'toggle-export':S.showExport=!S.showExport;break;
+    case'add-env':S.showEnvForm=!S.showEnvForm;break;
+    case'cancel-env':S.showEnvForm=false;break;
+
+    case'add-lair':{
+      if(S.combatants.some(c=>c.type==='lair')){alert('A Lair Action already exists. Only one allowed per RAW 2014.');break;}
+      S.combatants.push({id:'lair_'+Date.now(),name:'Lair Action',subname:'Initiative 20 (RAW 2014)',type:'lair',
+        init:20,ac:0,hp:0,maxHp:0,tempHp:0,cover:'none',conditions:[],conc:false,
+        actions:{a:false,b:false,r:false,m:false},spellSlots:null,
+        legendaryMax:0,legendaryUsed:0,monster:null,deathS:0,deathF:0,notes:''});
+      break;
+    }
+
+    case'confirm-env':{
+      const n=document.getElementById('ef-name')?.value.trim()||'Environment Effect';
+      const ini=parseInt(document.getElementById('ef-init')?.value)||0;
+      S.combatants.push({id:uid(),name:n,subname:'Environment Effect',type:'env',
+        init:ini,ac:0,hp:0,maxHp:0,tempHp:0,cover:'none',conditions:[],conc:false,
+        actions:{a:false,b:false,r:false,m:false},spellSlots:null,
+        legendaryMax:0,legendaryUsed:0,monster:null,deathS:0,deathF:0,notes:''});
+      S.showEnvForm=false;showToast(`Added: ${n}`);doRender=false;break;
+    }
+
+    case'set-add-type':S.addFormType=val;break;
+
+    case'confirm-add':{
+      const errs={};
+      const nm=document.getElementById('af-name')?.value.trim();
+      const acV=parseInt(document.getElementById('af-ac')?.value);
+      const mhpV=parseInt(document.getElementById('af-mhp')?.value);
+      if(!nm)errs.name='Name is required.';
+      if(isNaN(acV)||acV<0)errs.ac='AC must be ≥ 0.';
+      if(isNaN(mhpV)||mhpV<1)errs.mhp='Max HP must be ≥ 1.';
+      if(nm&&S.combatants.some(c=>c.name===nm))errs.namew=`A combatant named "${nm}" already exists.`;
+      S.formErrors=errs;
+      if(errs.name||errs.ac||errs.mhp){render();document.querySelector('[data-fk="add-name"]')?.focus();doRender=false;break;}
+      const sub=document.getElementById('af-sub')?.value.trim()||'';
+      const ini=parseInt(document.getElementById('af-init')?.value)||0;
+      const hpR=parseInt(document.getElementById('af-hp')?.value);
+      const hp=isNaN(hpR)?mhpV:Math.min(hpR,mhpV);
+      const thp=Math.max(0,parseInt(document.getElementById('af-thp')?.value)||0);
+      const notes=document.getElementById('af-notes')?.value||'';
+      const isPC=S.addFormType==='pc';
+      let slots=null,legMax=0;
+      if(!isPC){
+        const spec={};let any=false;
+        [1,2,3,4,5,6,7,8].forEach(k=>{const v=parseInt(document.getElementById(`as-slot${k}`)?.value)||0;if(v>0){spec[k]=v;any=true;}});
+        if(any)slots=spec;
+        legMax=Math.max(0,parseInt(document.getElementById('af-leg')?.value)||0);
+      }
+      S.combatants.push({id:uid(),name:nm,subname:sub,type:isPC?'pc':'enemy',
+        init:ini,ac:acV,hp,maxHp:mhpV,tempHp:thp,cover:'none',conditions:[],conc:false,
+        actions:{a:false,b:false,r:false,m:false},
+        spellSlots:slots?mkSlots(slots):null,
+        legendaryMax:legMax,legendaryUsed:0,monster:null,deathS:0,deathF:0,notes});
+      S.formErrors={};
+      showToast(`Added: ${nm}`);
+      render();
+      document.querySelector('[data-fk="add-name"]')?.focus();
+      doRender=false;
+      break;
+    }
+
+    // ---- EXPORT / IMPORT ----
+    case'copy-export':{
+      const ta=document.getElementById('ex-ta');
+      if(ta){ta.select();document.execCommand('copy');showToast('Copied to clipboard.');doRender=false;}
+      break;
+    }
+    case'dl-export':{
+      const json=JSON.stringify({round:S.round,turnIndex:S.turnIndex,combatants:S.combatants},null,2);
+      const blob=new Blob([json],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=`walka-wedrowcy-runda${S.round}.json`;a.click();
+      URL.revokeObjectURL(url);doRender=false;break;
+    }
+    case'import-state':{
+      const ta=document.getElementById('ex-ta');
+      if(!ta)break;
+      try{
+        const data=JSON.parse(ta.value);
+        if(!Array.isArray(data.combatants))throw new Error('Brak pola combatants: Array.');
+        S.round=data.round||1;S.turnIndex=data.turnIndex||0;
+        S.combatants=data.combatants;
+        S.expanded={};S.activeTab={};S.concSaves=[];S.showExport=false;
+        showToast('Combat state imported successfully.');doRender=false;
+      }catch(err){alert('Import error: '+err.message);doRender=false;}
+      break;
+    }
+
+    // ---- QUICK COND ----
+    case'toggle-quick-cond':
+      S.quickCondId=(S.quickCondId===id)?null:id;break;
+
+    // ---- ROLL INITIATIVE ----
+    case'roll-initiative':
+      S.combatants.forEach(c=>{if(c.init===0)c.init=Math.ceil(Math.random()*20);});
+      sortByInit();
+      showToast('Initiative rolled! Adjust values then hit Sort.');doRender=false;break;
+
+    // ---- MULTI-TARGET ----
+    case'toggle-multi':
+      S.multiMode=!S.multiMode;S.selected={};S.aoeAmt=10;break;
+    case'toggle-select':
+      S.selected[id]=!S.selected[id];doRender=false;
+      {const cb=document.querySelector(`[data-act="toggle-select"][data-id="${id}"]`);if(cb)cb.checked=!!S.selected[id];}
+      {const lbl=document.querySelector('.multi-bar span:nth-child(2)');if(lbl)lbl.textContent=Object.values(S.selected).filter(Boolean).length+' selected';}
+      break;
+    case'select-all-enemies':
+      S.combatants.forEach(c=>{if(c.type==='enemy')S.selected[c.id]=true;});break;
+    case'clear-selection':
+      S.selected={};break;
+    case'set-aoe':doRender=false;break;
+    case'apply-aoe':{
+      const aoeEl=document.querySelector('[data-act="set-aoe"]');
+      const dmg=parseInt(aoeEl?.value)||S.aoeAmt;
+      S.aoeAmt=dmg;
+      let hit=0;
+      S.combatants.forEach(c=>{if(S.selected[c.id]){applyDamage(c,dmg);hit++;}});
+      S.selected={};
+      if(hit)showToast(`${dmg} damage applied to ${hit} combatant${hit>1?'s':''}.`);
+      doRender=false;break;
+    }
+
+    default:doRender=false;break;
+  }
+
+  if(doRender)render();
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.closest('#add-form-panel')&&!e.target.matches('textarea')){
+    document.querySelector('[data-act="confirm-add"]')?.click();
+  }
+});
+
+// ======================================================
+// KEYBOARD SHORTCUTS
+// ======================================================
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea,select'))return;
+  if(e.code==='Space'||e.code==='ArrowRight'){e.preventDefault();nextTurn();render();scrollToActive();}
+  if(e.code==='ArrowLeft'){e.preventDefault();prevTurn();render();scrollToActive();}
+});
+// ======================================================
+// INIT
+// ======================================================
+render();
+// Focus first init input
+setTimeout(()=>document.querySelector('.init-inp')?.focus(),100);
+</script>
+</body>
+</html>
