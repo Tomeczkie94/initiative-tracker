@@ -56,6 +56,7 @@ export function initialState() {
     toast: null,
     quickCondId: null,
     multiMode: false, selected: {}, aoeAmt: 10,
+    editId: null,
   };
 }
 

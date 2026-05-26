@@ -16,7 +16,7 @@ const TAB_COMPONENTS = {
 };
 
 export default function CombatantCard({ combatant: c, index }) {
-  const { state, toggleExpand, goTab, damage, heal, setInit, removeCombatant, toggleSelect } = useApp();
+  const { state, toggleExpand, goTab, damage, heal, setInit, removeCombatant, toggleSelect, startEdit } = useApp();
   const [dmgAmt, setDmgAmt] = useState(1);
 
   const isAct = index === state.turnIndex;
@@ -25,12 +25,14 @@ export default function CombatantCard({ combatant: c, index }) {
   const hasHP = c.type === 'pc' || c.type === 'enemy';
   const allDone = hasHP && c.actions.a && c.actions.b && c.actions.r && c.actions.m;
 
+  const isEditing = state.editId === c.id;
   const cls = [
     'cbt',
     `t-${c.type}`,
     isAct ? 'is-active' : '',
     isDwn ? 'is-downed' : '',
     allDone && !isAct ? 'is-done' : '',
+    isEditing ? 'is-editing' : '',
   ].filter(Boolean).join(' ');
 
   const activeTab = state.activeTab[c.id] || defaultTab(c);
@@ -114,14 +116,24 @@ export default function CombatantCard({ combatant: c, index }) {
           </div>
         )}
 
-        <button
-          className="btn btn-sm btn-icon"
-          style={{opacity:.6}}
-          onClick={handleRemove}
-          title="Remove combatant"
-        >
-          <i className="ti ti-trash"></i>
-        </button>
+        <div style={{display:'flex',gap:'3px'}} onClick={e => e.stopPropagation()}>
+          <button
+            className="btn btn-sm btn-icon"
+            style={{opacity:.6}}
+            onClick={() => startEdit(c.id)}
+            title="Edit combatant"
+          >
+            <i className="ti ti-pencil"></i>
+          </button>
+          <button
+            className="btn btn-sm btn-icon"
+            style={{opacity:.6}}
+            onClick={handleRemove}
+            title="Remove combatant"
+          >
+            <i className="ti ti-trash"></i>
+          </button>
+        </div>
         <div className={`chevron ${isExp ? 'open' : ''}`}>
           <i className="ti ti-chevron-right"></i>
         </div>
