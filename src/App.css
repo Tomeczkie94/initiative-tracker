@@ -10,8 +10,50 @@
   --glow:0 0 0 2px #c9a53c,0 0 20px rgba(201,165,60,.25);
 }
 html,body{height:100%;overflow:hidden}
-#root{height:100%;display:flex;flex-direction:column;overflow:hidden}
+#root{height:100%;display:flex;flex-direction:row;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Lato',system-ui,sans-serif;font-size:13px;line-height:1.4;display:flex;flex-direction:column}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* SIDEBAR */
+#sidebar{background:var(--panel);border-right:2px solid var(--border-hi);display:flex;flex-direction:column;flex-shrink:0;width:200px;transition:width .2s ease;overflow:hidden}
+#sidebar.collapsed{width:28px}
+.sb-header{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--border-hi);flex-shrink:0;background:var(--panel-hi)}
+#sidebar.collapsed .sb-header{padding:4px;justify-content:center}
+.sb-toggle-btn{display:flex;align-items:center;justify-content:center;width:20px;height:20px;background:none;border:none;color:var(--text-md);cursor:pointer;padding:0;flex-shrink:0;border-radius:2px;transition:color .15s}
+.sb-toggle-btn:hover{color:var(--gold)}
+.sb-title{font-family:'Cinzel',serif;font-size:10px;color:var(--text-md);letter-spacing:.08em;white-space:nowrap;overflow:hidden}
+.sb-body{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-hi) var(--bg)}
+.sb-section-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.1em;color:var(--text-lo);padding:8px 10px 4px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.sb-nav-btn{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;transition:color .15s,background .15s}
+.sb-nav-btn:hover{color:var(--text-md);background:var(--panel-hi)}
+.sb-nav-active{color:var(--gold)!important;background:rgba(201,165,60,.08)!important}
+.view-placeholder{flex:1;display:flex;align-items:center;justify-content:center}
+.view-placeholder-inner{text-align:center;color:var(--text-lo)}
+.view-placeholder-inner .ti{font-size:48px;display:block;margin-bottom:16px;color:var(--border-hi)}
+.view-placeholder-inner h2{font-family:'Cinzel',serif;font-size:22px;color:var(--text-md);margin-bottom:8px}
+.view-placeholder-inner p{font-size:13px}
+.sb-entry{padding:6px 10px;border-bottom:1px solid rgba(62,46,20,.5);cursor:pointer;transition:background .15s}
+.sb-entry:hover{background:var(--panel-hi)}
+.sb-entry.sb-active{background:var(--panel-hi);border-left:2px solid var(--gold);padding-left:8px}
+.sb-entry.sb-downed{opacity:.5}
+.sb-entry-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.sb-entry-name{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.sb-entry.sb-active .sb-entry-name{color:var(--gold-hi)}
+.sb-entry-actions{display:flex;gap:2px;flex-shrink:0;visibility:hidden}
+.sb-entry:hover .sb-entry-actions{visibility:visible}
+.sb-action-btn{display:flex;align-items:center;justify-content:center;width:18px;height:18px;background:none;border:1px solid var(--border);border-radius:2px;cursor:pointer;color:var(--text-lo);font-size:10px;padding:0;transition:all .15s;line-height:1}
+.sb-action-btn:hover{border-color:var(--border-hi);color:var(--text-md)}
+.sb-action-del:hover{border-color:#804040;color:#e08080}
+.sb-entry-hp{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.sb-entry-hp-nums{font-family:'Cinzel',serif;font-size:10px}
+.sb-entry-bar{height:3px;background:var(--bg);border-radius:1px;overflow:hidden}
+.sb-entry-bar-fill{height:100%;border-radius:1px;transition:width .3s,background .3s}
+.sb-entry-conds{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px}
+.sb-cond-pill{font-size:9px;padding:0 4px;border-radius:8px;border:1px solid;line-height:14px}
+.sb-section-content{display:grid;grid-template-rows:1fr;transition:grid-template-rows .25s ease}
+.sb-section-content.collapsed{grid-template-rows:0fr}
+.sb-section-content>div{min-height:0;overflow:hidden}
+.sb-empty{font-size:11px;color:var(--text-lo);font-style:italic;padding:8px 10px}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
